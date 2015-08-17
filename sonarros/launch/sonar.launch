@@ -1,0 +1,10 @@
+<launch>
+	<node pkg="sonarros" type="maxsonar.py" name="maxsonar" output="screen">
+		<!-- node parameters -->
+		<param name="devname" type="string" value="/dev/ttyUSBSonar"/>
+		<param name="baudrate" type="int" value="9600"/>
+
+		<remap from="~height" to="/sonar/height" />
+
+	</node>
+</launch>
