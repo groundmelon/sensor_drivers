@@ -1,0 +1,7 @@
+<launch>
+	<node pkg="laser_splitter" type="laser_splitter.py" name="laser_splitter" output="screen">
+		<remap from="~scan_in" to="/scan_raw" />
+		<remap from="~scan_out" to="/scan" />
+		<remap from="~height" to="/scan/height" />
+	</node>
+</launch>
