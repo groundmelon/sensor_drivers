@@ -13,6 +13,7 @@
     <arg name="mask0" default="c" /> 
     <arg name="mask1" default="abc" /> 
     <arg name="mask0_topic" default="image" /> 
+    <arg name="mask1_topic" default="abc" /> 
     
     <node pkg="bluefox2" type="bluefox2" name="$(arg node_name)" output="screen" >
         <param name="fps" type="double" value="$(arg fps)" />
@@ -29,7 +30,7 @@
         <param name="mask0" type="string" value="$(arg mask0)" />   
         <param name="mask1" type="string" value="$(arg mask1)" />   
         <remap from="~$(arg mask0)" to="~$(arg mask0_topic)" />
-        <!-- <remap from="~ab" to="~image" /> -->
+        <remap from="~$(arg mask1)" to="~$(arg mask1_topic)" />
     </node> 
 
 </launch>  

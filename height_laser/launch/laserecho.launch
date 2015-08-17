@@ -1,0 +1,7 @@
+<launch>
+	<node pkg="height_laser" type="height_laser_node" name="laserecho" output="screen">
+		<!-- node parameters -->
+		<param name="devname" type="string" value="/dev/ttyUSBLaser"/>
+		<remap from="~height" to="/laserecho/height" />
+	</node>
+</launch>
