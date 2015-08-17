@@ -6,12 +6,15 @@ from geometry_msgs.msg import Vector3Stamped
 import numpy
 import copy
 
-laser_range = (None, 1.9199)
-height_range = (2.059, 2.164)
+laser_range = [None, 1.9199]
+height_range = [2.059, 2.164]
 height_offset = 0.44
 
 
 def laser_callback(msg, pub):
+    assert laser_range[1]<msg.angle_max
+    assert msg.angle_min < height_range[0] < height_range[1] < msg.angle_max
+    
     laser_max_idx = int((laser_range[1] - msg.angle_min) / msg.angle_increment)
     assert laser_max_idx < len(msg.ranges), 'Assert: laser_max_idx(=%d) < len(msg.ranges)(=%d) failed.' % (
         laser_max_idx, len(msg.ranges))
@@ -45,5 +48,10 @@ if __name__ == "__main__":
 
     laser_sub = rospy.Subscriber('~scan_in', LaserScan, laser_callback, callback_args=dict(
         laser=laser_pub, height=height_pub))
+
+    laser_range[1]  = rospy.get_param('~laser_range_upper_limit', laser_range[1])
+    height_range[0] = rospy.get_param('~height_range_lower_limit', height_range[0])
+    height_range[1] = rospy.get_param('~height_range_upper_limit', height_range[1])
+    height_offset   = rospy.get_param('~height_offset', height_offset)
 
     rospy.spin()
