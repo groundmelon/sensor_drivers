@@ -40,6 +40,7 @@ private:
     int cam_cnt;
     std::vector<std::string> serial;
     std::vector<unsigned int> ids;
+    std::vector<int> exposure_time_us;
 
     int pub_cnt;
     std::vector<ros::Publisher> pub_img;
@@ -53,7 +54,6 @@ private:
     bool use_auto_exposure;
     double fps;
     double gain;
-    int  exposure_time_us;
 
     bool initSingleMVDevice(unsigned int id);
     bool grab_image_data();

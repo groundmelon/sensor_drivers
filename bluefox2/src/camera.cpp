@@ -13,13 +13,16 @@ Camera::Camera(ros::NodeHandle _comm_nh, ros::NodeHandle _param_nh) : node(_comm
 
     pnode.param("fps", fps, 30.0);
     pnode.param("gain", gain, 5.0);
-    pnode.param("exposure_time_us", exposure_time_us, 10000);
 
     pnode.param("cam_cnt", cam_cnt, 0);
     serial.resize(cam_cnt);
     ids.resize(cam_cnt);
+    exposure_time_us.resize(cam_cnt);
     for (int i = 0; i < cam_cnt; i++)
+    {
+        pnode.param(std::string("exposure_time_us") + char('a' + i), exposure_time_us[i], 10000);
         pnode.param(std::string("serial") + char('a' + i), serial[i], std::string(""));
+    }
 
     pnode.param("pub_cnt", pub_cnt, 0);
     pub_img.resize(pub_cnt);
@@ -147,13 +150,13 @@ bool Camera::initSingleMVDevice(unsigned int id)
         settings.cameraSetting.autoControlParameters.desiredAverageGreyValue.write(100);
         settings.cameraSetting.autoControlParameters.controllerDelay_Images.write(0);
         settings.cameraSetting.autoControlParameters.exposeLowerLimit_us.write(50);
-        settings.cameraSetting.autoControlParameters.exposeUpperLimit_us.write(exposure_time_us);
+        settings.cameraSetting.autoControlParameters.exposeUpperLimit_us.write(exposure_time_us[ids[id]]);
         settings.cameraSetting.autoExposeControl.write(aecOn);
         ROS_INFO("Auto Exposure w/ Max Exposure Time (us) :  %d", settings.cameraSetting.autoControlParameters.exposeUpperLimit_us.read());
     }
     else
     {
-        settings.cameraSetting.expose_us.write(exposure_time_us);
+        settings.cameraSetting.expose_us.write(exposure_time_us[ids[id]]);
         ROS_INFO("Exposure Time (us) :  %d", settings.cameraSetting.expose_us.read());
     }
 
