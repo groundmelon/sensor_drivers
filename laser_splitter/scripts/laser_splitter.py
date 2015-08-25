@@ -20,14 +20,21 @@ def laser_callback(msg, pub):
         laser_max_idx, len(msg.ranges))
 
     # extract normal laser segment
-    laser_msg = copy.deepcopy(msg)
+    laser_msg = LaserScan()
+    laser_msg.header = msg.header
+    laser_msg.angle_min = msg.angle_min
+    laser_msg.angle_increment = msg.angle_increment
+    laser_msg.time_increment = msg.time_increment
+    laser_msg.scan_time = msg.scan_time
+    laser_msg.range_min = msg.range_min
+    laser_msg.range_max = msg.range_max
     laser_msg.angle_max = laser_range[1]
-    laser_msg.ranges = msg.ranges[:laser_max_idx]
-    laser_msg.intensities = msg.intensities[:laser_max_idx]
+    laser_msg.ranges = list(msg.ranges[:laser_max_idx])
+    laser_msg.intensities = list(msg.intensities[:laser_max_idx])
 
     height_idx = (int((height_range[0] - msg.angle_min) / msg.angle_increment),
                   int((height_range[1] - msg.angle_min) / msg.angle_increment))
-
+    
     # extract height segment
     h = numpy.mean(msg.ranges[height_idx[0]:(height_idx[1] + 1)])
     height_msg = Vector3Stamped()
