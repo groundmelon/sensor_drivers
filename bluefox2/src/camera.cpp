@@ -3,6 +3,18 @@
 namespace bluefox2
 {
 
+void Camera::callback(bluefox2::on_offConfig &config, uint32_t level)
+{
+    ROS_INFO("Reconfigure Request: %d", config.camera_cover);
+    for (int i = 0; i < cam_cnt; i++, config.camera_cover >>= 1)
+    {
+        if (config.camera_cover & 1)
+            on_off[i] = true;
+        else
+            on_off[i] = false;
+    }
+}
+
 Camera::Camera(ros::NodeHandle _comm_nh, ros::NodeHandle _param_nh) : node(_comm_nh), pnode(_param_nh)
 {
     pnode.param("use_color", use_color, false);
@@ -16,10 +28,12 @@ Camera::Camera(ros::NodeHandle _comm_nh, ros::NodeHandle _param_nh) : node(_comm
 
     pnode.param("cam_cnt", cam_cnt, 0);
     serial.resize(cam_cnt);
+    on_off.resize(cam_cnt);
     ids.resize(cam_cnt);
     exposure_time_us.resize(cam_cnt);
     for (int i = 0; i < cam_cnt; i++)
     {
+        on_off[i] = false;
         pnode.param(std::string("exposure_time_us") + char('a' + i), exposure_time_us[i], 10000);
         pnode.param(std::string("serial") + char('a' + i), serial[i], std::string(""));
     }
@@ -32,7 +46,7 @@ Camera::Camera(ros::NodeHandle _comm_nh, ros::NodeHandle _param_nh) : node(_comm
     {
         pnode.param(std::string("mask") + char('0' + i), masks[i], std::string(""));
         std::cout << masks[i] << std::endl;
-        std::cout <<  i << std::endl;
+        std::cout << i << std::endl;
         pub_img[i] = node.advertise<sensor_msgs::Image>(masks[i], 10);
     }
 
@@ -55,7 +69,6 @@ Camera::Camera(ros::NodeHandle _comm_nh, ros::NodeHandle _param_nh) : node(_comm
         ROS_ERROR("Camera Init Failed.");
 }
 
-
 Camera::~Camera()
 {
     for (int i = 0; i < cam_cnt; i++)
@@ -66,12 +79,10 @@ Camera::~Camera()
     ok = false;
 }
 
-
 bool Camera::isOK()
 {
     return ok;
 }
-
 
 bool Camera::initSingleMVDevice(unsigned int id)
 {
@@ -81,11 +92,12 @@ bool Camera::initSingleMVDevice(unsigned int id)
     {
         devMgr[id]->open();
     }
-    catch (const mvIMPACT::acquire::ImpactAcquireException& e)
+    catch (const mvIMPACT::acquire::ImpactAcquireException &e)
     {
         std::cout << "An error occurred while opening the device " << devMgr[id]->serial.read()
                   << "(error code: " << e.getErrorCode() << "(" << e.getErrorCodeAsString() << "))."
-                  << std::endl << "Press [ENTER] to end the application..." << std::endl;
+                  << std::endl
+                  << "Press [ENTER] to end the application..." << std::endl;
         return false;
     }
 
@@ -93,11 +105,12 @@ bool Camera::initSingleMVDevice(unsigned int id)
     {
         fi[id] = new mvIMPACT::acquire::FunctionInterface(devMgr[id]);
     }
-    catch (const mvIMPACT::acquire::ImpactAcquireException& e)
+    catch (const mvIMPACT::acquire::ImpactAcquireException &e)
     {
         std::cout << "An error occurred while creating the function interface on device " << devMgr[id]->serial.read()
                   << "(error code: " << e.getErrorCode() << "(" << e.getErrorCodeAsString() << "))."
-                  << std::endl << "Press [ENTER] to end the application..." << std::endl;
+                  << std::endl
+                  << "Press [ENTER] to end the application..." << std::endl;
         return false;
     }
 
@@ -105,11 +118,12 @@ bool Camera::initSingleMVDevice(unsigned int id)
     {
         statistics[id] = new mvIMPACT::acquire::Statistics(devMgr[id]);
     }
-    catch (const mvIMPACT::acquire::ImpactAcquireException& e)
+    catch (const mvIMPACT::acquire::ImpactAcquireException &e)
     {
         std::cout << "An error occurred while initializing the statistical information on device " << devMgr[id]->serial.read()
                   << "(error code: " << e.getErrorCode() << "(" << e.getErrorCodeAsString() << "))."
-                  << std::endl << "Press [ENTER] to end the application..." << std::endl;
+                  << std::endl
+                  << "Press [ENTER] to end the application..." << std::endl;
         return false;
     }
 
@@ -190,13 +204,13 @@ bool Camera::initSingleMVDevice(unsigned int id)
     if (use_color)
     {
         // RGB image
-        settings.imageDestination.pixelFormat.write( idpfBGR888Packed );
+        settings.imageDestination.pixelFormat.write(idpfBGR888Packed);
         ROS_INFO("Color Images");
     }
     else
     {
         // Raw image
-        settings.imageDestination.pixelFormat.write( idpfRaw );
+        settings.imageDestination.pixelFormat.write(idpfRaw);
         ROS_INFO("Grayscale/Bayer Images");
     }
 
@@ -227,9 +241,14 @@ bool Camera::initSingleMVDevice(unsigned int id)
     return true;
 }
 
-
 void Camera::feedImages()
 {
+    dynamic_reconfigure::Server<bluefox2::on_offConfig> server;
+    dynamic_reconfigure::Server<bluefox2::on_offConfig>::CallbackType f;
+    f = boost::bind(&bluefox2::Camera::callback, this, _1, _2);
+    //f = boost::bind(&subcallback, _1, _2);
+    server.setCallback(f);
+
     ros::Rate r(fps);
     sensor_msgs::ImagePtr image(new sensor_msgs::Image);
     sensor_msgs::ImagePtr left(new sensor_msgs::Image);
@@ -245,9 +264,8 @@ void Camera::feedImages()
                 pub_img[i].publish(img_buf[i]);
             }
         }
+        ros::spinOnce();
     }
-    r.sleep();
-    ros::spinOnce();
 }
 
 bool Camera::grab_image_data()
@@ -255,7 +273,7 @@ bool Camera::grab_image_data()
     // Request images from both cameras
     for (int i = 0; i < cam_cnt; i++)
         fi[ids[i]]->imageRequestSingle();
-    usleep(10000);  // necessary short sleep to warm up the camera
+    usleep(10000); // necessary short sleep to warm up the camera
     capture_time = ros::Time::now();
 
     int requestNr[10] = {INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID};
@@ -274,7 +292,6 @@ bool Camera::grab_image_data()
         {
             pRequest[ids[i]] = fi[ids[i]]->getRequest(requestNr[ids[i]]);
             ok_cnt += pRequest[ids[i]]->isOK();
-
         }
 
         if (ok_cnt == cam_cnt)
@@ -293,8 +310,8 @@ bool Camera::grab_image_data()
 
                 // Set image properties
                 img_buf[i].height = Height * sub_img_cnt;
-                img_buf[i].width  = Width;
-                img_buf[i].step   = Step;
+                img_buf[i].width = Width;
+                img_buf[i].step = Step;
                 img_buf[i].encoding = Encoding;
 
                 // Resize image
@@ -304,9 +321,10 @@ bool Camera::grab_image_data()
                 for (unsigned int j = 0; j < sub_img_cnt; j++)
                 {
                     int k = masks[i][j] - 'a';
-                    memcpy(&img_buf[i].data[Data_cnt * j],
-                           pRequest[ids[k]]->imageData.read(),
-                           Data_cnt);
+                    if (on_off[k])
+                        memset(&img_buf[i].data[Data_cnt * j], 0, Data_cnt);
+                    else
+                        memcpy(&img_buf[i].data[Data_cnt * j], pRequest[ids[k]]->imageData.read(), Data_cnt);
                 }
             }
             // Release capture request
@@ -338,5 +356,3 @@ bool Camera::grab_image_data()
     return status;
 }
 }
-
-
