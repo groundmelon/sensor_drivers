@@ -8,10 +8,10 @@
         <param name="exposure_time_usa" type="int" value="10000" />     
         <param name="serialb" type="string" value="25000704" />   
         <param name="exposure_time_usb" type="int" value="10000" />     
-        <param name="serialc" type="string" value="25001161" />   
+        <param name="serialc" type="string" value="25001482" />   
         <param name="exposure_time_usc" type="int" value="10000" />     
         <param name="pub_cnt" type="int" value="2" />   
-        <param name="mask0" type="string" value="ab" />   
-        <param name="mask1" type="string" value="ba" />   
+        <param name="mask0" type="string" value="abc" />   
+        <param name="mask1" type="string" value="c" />   
     </node> 
 </launch>  

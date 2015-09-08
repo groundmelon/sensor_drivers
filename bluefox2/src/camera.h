@@ -7,20 +7,22 @@
 #include <sensor_msgs/image_encodings.h>
 #include <mvIMPACT_CPP/mvIMPACT_acquire.h>
 #include <errno.h>
+#include <dynamic_reconfigure/server.h>
+#include <bluefox2/on_offConfig.h>
 
 namespace bluefox2
 {
 
 class Camera
 {
-public:
+  public:
     Camera(ros::NodeHandle comm_nh, ros::NodeHandle param_nh);
+    void callback(bluefox2::on_offConfig &config, uint32_t level);
     ~Camera();
     bool isOK();
     void feedImages();
 
-private:
-
+  private:
     // Node handle
     ros::NodeHandle node, pnode;
     // mvIMPACT Acquire device manager
@@ -30,7 +32,7 @@ private:
     // establish access to the statistic properties
     mvIMPACT::acquire::Statistics *statistics[10];
     // Image request
-    const mvIMPACT::acquire::Request* pRequest[10];
+    const mvIMPACT::acquire::Request *pRequest[10];
     // Internal parameters that cannot be changed
     bool ok;
     ros::Time capture_time;
@@ -39,6 +41,7 @@ private:
     // User specified parameters
     int cam_cnt;
     std::vector<std::string> serial;
+    std::vector<bool> on_off;
     std::vector<unsigned int> ids;
     std::vector<int> exposure_time_us;
 
@@ -58,7 +61,4 @@ private:
     bool initSingleMVDevice(unsigned int id);
     bool grab_image_data();
 };
-
 }
-
-
