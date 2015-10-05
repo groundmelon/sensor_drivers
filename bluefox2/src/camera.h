@@ -43,6 +43,7 @@ class Camera
     std::vector<std::string> serial;
     std::vector<bool> on_off;
     std::vector<unsigned int> ids;
+    std::vector<unsigned int> ids_inv;
     std::vector<int> exposure_time_us;
 
     int pub_cnt;

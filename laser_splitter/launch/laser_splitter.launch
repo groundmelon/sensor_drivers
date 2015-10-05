@@ -5,8 +5,8 @@
 		<remap from="~height" to="/scan/height" />
 
 		<param name="~laser_range_upper_limit"  type="double" value="1.9199" />
-		<param name="~height_range_lower_limit" type="double" value="2.059" />
-		<param name="~height_range_upper_limit" type="double" value="2.164" />
-		<param name="~height_offset"  type="double" value="0.44" />
+		<param name="~height_range_lower_limit" type="double" value="2.094" />
+		<param name="~height_range_upper_limit" type="double" value="2.181" />
+		<param name="~height_offset"  type="double" value="0.41" />
 	</node>
 </launch>
