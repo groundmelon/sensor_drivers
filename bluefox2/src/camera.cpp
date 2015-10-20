@@ -46,8 +46,6 @@ namespace bluefox2
         for (int i = 0; i < pub_cnt; i++)
         {
             pnode.param(std::string("mask") + char('0' + i), masks[i], std::string(""));
-            std::cout << masks[i] << std::endl;
-            std::cout << i << std::endl;
             pub_img[i] = node.advertise<sensor_msgs::Image>(masks[i], 10);
         }
 
@@ -61,10 +59,8 @@ namespace bluefox2
             for (unsigned int k = 0; k < devCnt; k++)
                 if (devMgr[k]->serial.read() == serial[i])
                 {
-                    std::cout << devMgr[k]->serial.read() << std::endl;
                     ids[i] = k;
                     ids_inv[k] = i;
-                    printf("%d %d\n", i,k);
                     if (!initSingleMVDevice(k))
                         ok = false;
                 }
@@ -174,7 +170,7 @@ namespace bluefox2
         else
         {
             settings.cameraSetting.expose_us.write(exposure_time_us[ids_inv[id]]);
-            ROS_INFO("Exposure Time (us) :  %d %d",exposure_time_us[ids_inv[id]], settings.cameraSetting.expose_us.read());
+            ROS_INFO("Exposure Time (us) :  %d",exposure_time_us[ids_inv[id]]);
         }
 
         // HDR
@@ -268,6 +264,7 @@ namespace bluefox2
                 }
             }
             ros::spinOnce();
+            r.sleep();
         }
     }
 

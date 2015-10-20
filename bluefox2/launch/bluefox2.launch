@@ -2,7 +2,7 @@
     <!-- Camera -->
     <arg name="node_name" default="camera" /> 
     <arg name="fps" default="30.0" />
-    <arg name="gain" default="5.0" />
+    <arg name="gain" default="1.0" />
     <arg name="use_auto_exposure" default="false" />
     <arg name="cam_cnt" default="3" />
     <arg name="seriala" default="25000709" />
@@ -12,11 +12,11 @@
     <arg name="exposure_time_usb" default="10000" />
     <arg name="exposure_time_usc" default="10000" />     
     <arg name="pub_cnt" default="2" /> 
-    <arg name="mask0" default="c" /> 
-    <arg name="mask1" default="abc" /> 
-    <arg name="mask0_topic" default="image" /> 
-    <arg name="mask1_topic" default="abc" /> 
-    
+    <arg name="mask0" default="a" /> 
+    <arg name="mask1" default="b" /> 
+    <arg name="mask0_topic" default="a" /> 
+    <arg name="mask1_topic" default="b" /> 
+
     <node pkg="bluefox2" type="bluefox2" name="$(arg node_name)" output="screen" >
         <param name="fps" type="double" value="$(arg fps)" />
         <param name="gain" type="double" value="$(arg gain)" />
