@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="bluefox2" type="bluefox2" name="bluefox2" output="screen">
+        <remap from="~trigger" to="/mavros/cam_imu_sync/cam_imu_stamp" />
+    </node>
+</launch>
