@@ -1,0 +1,14 @@
+<launch>
+    <node pkg="bluefox2" type="bluefox2" name="bluefox2" output="screen">
+        <param name="fps" type="double" value="30.0" />
+        <param name="gain" type="double" value="1.0" />
+        <param name="use_auto_exposure" type="bool" value="false" />
+        <param name="cam_cnt" type="int" value="2" />
+        <param name="seriala" type="string" value="25001511" />
+        <param name="exposure_time_usa" type="int" value="10000" />
+        <param name="serialb" type="string" value="25001507" />
+        <param name="exposure_time_usb" type="int" value="10000" />
+        <param name="pub_cnt" type="int" value="1" />
+        <param name="mask0" type="string" value="ab" />
+    </node>
+</launch>

@@ -1,40 +1,38 @@
-<launch>  
+<launch>
     <!-- Camera -->
-    <arg name="node_name" default="camera" /> 
+    <arg name="node_name" default="camera" />
     <arg name="fps" default="30.0" />
     <arg name="gain" default="1.0" />
     <arg name="use_auto_exposure" default="false" />
     <arg name="cam_cnt" default="3" />
     <arg name="seriala" default="25000709" />
     <arg name="serialb" default="25000704" />
-    <arg name="serialc" default="25001482" /> 
-    <arg name="exposure_time_usa" default="10000" />  
+    <arg name="serialc" default="25001482" />
+    <arg name="exposure_time_usa" default="10000" />
     <arg name="exposure_time_usb" default="10000" />
-    <arg name="exposure_time_usc" default="10000" />     
-    <arg name="pub_cnt" default="2" /> 
-    <arg name="mask0" default="a" /> 
-    <arg name="mask1" default="b" /> 
-    <arg name="mask0_topic" default="a" /> 
-    <arg name="mask1_topic" default="b" /> 
-
-    <node pkg="bluefox2" type="bluefox2" name="$(arg node_name)" output="screen" >
+    <arg name="exposure_time_usc" default="10000" />
+    <arg name="pub_cnt" default="2" />
+    <arg name="mask0" default="a" />
+    <arg name="mask1" default="b" />
+    <arg name="mask0_topic" default="a" />
+    <arg name="mask1_topic" default="b" />
+    <node pkg="bluefox2" type="bluefox2" name="$(arg node_name)" output="screen">
         <param name="fps" type="double" value="$(arg fps)" />
         <param name="gain" type="double" value="$(arg gain)" />
         <param name="use_auto_exposure" type="bool" value="$(arg use_auto_exposure)" />
-        <param name="use_color" type="bool" value="false" /> 
-        <param name="use_hdr" type="bool" value="true" />     
+        <param name="use_color" type="bool" value="false" />
+        <param name="use_hdr" type="bool" value="true" />
         <param name="cam_cnt" type="int" value="$(arg cam_cnt)" />
-        <param name="seriala" type="string" value="$(arg seriala)" />   
-        <param name="serialb" type="string" value="$(arg serialb)" />   
+        <param name="seriala" type="string" value="$(arg seriala)" />
+        <param name="serialb" type="string" value="$(arg serialb)" />
         <param name="serialc" type="string" value="$(arg serialc)" />
         <param name="exposure_time_usa" type="int" value="$(arg exposure_time_usa)" />
         <param name="exposure_time_usb" type="int" value="$(arg exposure_time_usb)" />
         <param name="exposure_time_usc" type="int" value="$(arg exposure_time_usc)" />
-        <param name="pub_cnt" type="int" value="$(arg pub_cnt)" />   
-        <param name="mask0" type="string" value="$(arg mask0)" />   
-        <param name="mask1" type="string" value="$(arg mask1)" />   
+        <param name="pub_cnt" type="int" value="$(arg pub_cnt)" />
+        <param name="mask0" type="string" value="$(arg mask0)" />
+        <param name="mask1" type="string" value="$(arg mask1)" />
         <remap from="~$(arg mask0)" to="~$(arg mask0_topic)" />
         <remap from="~$(arg mask1)" to="~$(arg mask1_topic)" />
-    </node> 
-
-</launch>  
+    </node>
+</launch>
