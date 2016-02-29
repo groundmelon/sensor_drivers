@@ -30,6 +30,7 @@ Camera::Camera(ros::NodeHandle _comm_nh, ros::NodeHandle _param_nh) : node(_comm
     serial.resize(cam_cnt);
     on_off.resize(cam_cnt);
     ids.resize(cam_cnt);
+    ids_inv.resize(cam_cnt);
     exposure_time_us.resize(cam_cnt);
     for (int i = 0; i < cam_cnt; i++)
     {
@@ -45,8 +46,6 @@ Camera::Camera(ros::NodeHandle _comm_nh, ros::NodeHandle _param_nh) : node(_comm
     for (int i = 0; i < pub_cnt; i++)
     {
         pnode.param(std::string("mask") + char('0' + i), masks[i], std::string(""));
-        std::cout << masks[i] << std::endl;
-        std::cout << i << std::endl;
         pub_img[i] = node.advertise<sensor_msgs::Image>(masks[i], 10);
     }
 
@@ -60,8 +59,8 @@ Camera::Camera(ros::NodeHandle _comm_nh, ros::NodeHandle _param_nh) : node(_comm
         for (unsigned int k = 0; k < devCnt; k++)
             if (devMgr[k]->serial.read() == serial[i])
             {
-                std::cout << devMgr[k]->serial.read() << std::endl;
                 ids[i] = k;
+                ids_inv[k] = i;
                 if (!initSingleMVDevice(k))
                     ok = false;
             }
@@ -221,7 +220,7 @@ bool Camera::initSingleMVDevice(unsigned int id)
     // Only for stereo, skip if only one camera exists
     if (cam_cnt >= 2)
     {
-        if (id == ids[0]) // Master camera
+        if (ids_inv[id] == 0) // Master camera
         {
             ROS_INFO("Set Master Camera\n");
             //settings.cameraSetting.triggerMode.write(ctmOnDemand);
@@ -265,6 +264,7 @@ void Camera::feedImages()
             }
         }
         ros::spinOnce();
+        r.sleep();
     }
 }
 
