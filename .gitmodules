@@ -1,0 +1,6 @@
+[submodule "sonarros"]
+	path = sonarros
+	url = git@github.com:groundmelon/sonarros.git
+[submodule "laser_splitter"]
+	path = laser_splitter
+	url = git@github.com:groundmelon/laser_splitter.git
