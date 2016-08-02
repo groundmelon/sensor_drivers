@@ -223,7 +223,7 @@ bool Camera::initSingleMVDevice(unsigned int id)
         if (ids_inv[id] == 0) // Master camera
         {
             ROS_INFO("Set Master Camera\n");
-            //settings.cameraSetting.triggerMode.write(ctmOnDemand);
+            settings.cameraSetting.triggerMode.write(ctmOnDemand);
             settings.cameraSetting.flashMode.write(cfmDigout0);
             settings.cameraSetting.flashType.write(cftStandard);
             settings.cameraSetting.flashToExposeDelay_us.write(0);
