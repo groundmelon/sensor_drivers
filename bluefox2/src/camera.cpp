@@ -1,13 +1,11 @@
 #include "camera.h"
+#include <boost/format.hpp>
 
-namespace bluefox2
-{
+namespace bluefox2 {
 
-void Camera::callback(bluefox2::on_offConfig &config, uint32_t level)
-{
+void Camera::callback(bluefox2::on_offConfig &config, uint32_t level) {
     ROS_INFO("Reconfigure Request: %d", config.camera_cover);
-    for (int i = 0; i < cam_cnt; i++, config.camera_cover >>= 1)
-    {
+    for (int i = 0; i < cam_cnt; i++, config.camera_cover >>= 1) {
         if (config.camera_cover & 1)
             on_off[i] = true;
         else
@@ -15,8 +13,8 @@ void Camera::callback(bluefox2::on_offConfig &config, uint32_t level)
     }
 }
 
-Camera::Camera(ros::NodeHandle _comm_nh, ros::NodeHandle _param_nh) : node(_comm_nh), pnode(_param_nh)
-{
+Camera::Camera(ros::NodeHandle _comm_nh, ros::NodeHandle _param_nh)
+    : node(_comm_nh), pnode(_param_nh) {
     pnode.param("use_color", use_color, false);
     pnode.param("use_hdr", use_hdr, true);
     pnode.param("has_hdr", has_hdr, true);
@@ -32,8 +30,7 @@ Camera::Camera(ros::NodeHandle _comm_nh, ros::NodeHandle _param_nh) : node(_comm
     ids.resize(cam_cnt);
     ids_inv.resize(cam_cnt);
     exposure_time_us.resize(cam_cnt);
-    for (int i = 0; i < cam_cnt; i++)
-    {
+    for (int i = 0; i < cam_cnt; i++) {
         on_off[i] = false;
         pnode.param(std::string("exposure_time_us") + char('a' + i), exposure_time_us[i], 10000);
         pnode.param(std::string("serial") + char('a' + i), serial[i], std::string(""));
@@ -43,8 +40,7 @@ Camera::Camera(ros::NodeHandle _comm_nh, ros::NodeHandle _param_nh) : node(_comm
     pub_img.resize(pub_cnt);
     masks.resize(pub_cnt);
     img_buf.resize(pub_cnt);
-    for (int i = 0; i < pub_cnt; i++)
-    {
+    for (int i = 0; i < pub_cnt; i++) {
         pnode.param(std::string("mask") + char('0' + i), masks[i], std::string(""));
         pub_img[i] = node.advertise<sensor_msgs::Image>(masks[i], 10);
     }
@@ -57,42 +53,34 @@ Camera::Camera(ros::NodeHandle _comm_nh, ros::NodeHandle _param_nh) : node(_comm
     ok = true;
     for (int i = 0; i < cam_cnt; i++)
         for (unsigned int k = 0; k < devCnt; k++)
-            if (devMgr[k]->serial.read() == serial[i])
-            {
+            if (devMgr[k]->serial.read() == serial[i]) {
                 ids[i] = k;
                 ids_inv[k] = i;
-                if (!initSingleMVDevice(k))
-                    ok = false;
+                if (!initSingleMVDevice(k)) ok = false;
             }
-    if (!ok)
-        ROS_ERROR("Camera Init Failed.");
+    if (!ok) ROS_ERROR("Camera Init Failed.");
 }
 
-Camera::~Camera()
-{
-    for (int i = 0; i < cam_cnt; i++)
-    {
+Camera::~Camera() {
+    for (int i = 0; i < cam_cnt; i++) {
         fi[ids[i]]->imageRequestReset(0, 0);
         devMgr[ids[i]]->close();
     }
     ok = false;
 }
 
-bool Camera::isOK()
-{
+bool Camera::isOK() {
     return ok;
 }
 
-bool Camera::initSingleMVDevice(unsigned int id)
-{
-    ROS_INFO("Camera Found:  %s(%s)", devMgr[id]->family.read().c_str(), devMgr[id]->serial.read().c_str());
+bool Camera::initSingleMVDevice(unsigned int id) {
+    ROS_INFO("Camera Found:  %s(%s)",
+             devMgr[id]->family.read().c_str(),
+             devMgr[id]->serial.read().c_str());
 
-    try
-    {
+    try {
         devMgr[id]->open();
-    }
-    catch (const mvIMPACT::acquire::ImpactAcquireException &e)
-    {
+    } catch (const mvIMPACT::acquire::ImpactAcquireException &e) {
         std::cout << "An error occurred while opening the device " << devMgr[id]->serial.read()
                   << "(error code: " << e.getErrorCode() << "(" << e.getErrorCodeAsString() << "))."
                   << std::endl
@@ -100,62 +88,50 @@ bool Camera::initSingleMVDevice(unsigned int id)
         return false;
     }
 
-    try
-    {
+    try {
         fi[id] = new mvIMPACT::acquire::FunctionInterface(devMgr[id]);
-    }
-    catch (const mvIMPACT::acquire::ImpactAcquireException &e)
-    {
-        std::cout << "An error occurred while creating the function interface on device " << devMgr[id]->serial.read()
-                  << "(error code: " << e.getErrorCode() << "(" << e.getErrorCodeAsString() << "))."
-                  << std::endl
+    } catch (const mvIMPACT::acquire::ImpactAcquireException &e) {
+        std::cout << "An error occurred while creating the function interface on device "
+                  << devMgr[id]->serial.read() << "(error code: " << e.getErrorCode() << "("
+                  << e.getErrorCodeAsString() << "))." << std::endl
                   << "Press [ENTER] to end the application..." << std::endl;
         return false;
     }
 
-    try
-    {
+    try {
         statistics[id] = new mvIMPACT::acquire::Statistics(devMgr[id]);
-    }
-    catch (const mvIMPACT::acquire::ImpactAcquireException &e)
-    {
-        std::cout << "An error occurred while initializing the statistical information on device " << devMgr[id]->serial.read()
-                  << "(error code: " << e.getErrorCode() << "(" << e.getErrorCodeAsString() << "))."
-                  << std::endl
+    } catch (const mvIMPACT::acquire::ImpactAcquireException &e) {
+        std::cout << "An error occurred while initializing the statistical information on device "
+                  << devMgr[id]->serial.read() << "(error code: " << e.getErrorCode() << "("
+                  << e.getErrorCodeAsString() << "))." << std::endl
                   << "Press [ENTER] to end the application..." << std::endl;
         return false;
     }
 
     // Set Properties
-    mvIMPACT::acquire::SettingsBlueFOX settings(devMgr[id]); // Using the "Base" settings (default)
+    mvIMPACT::acquire::SettingsBlueFOX settings(devMgr[id]);  // Using the "Base" settings (default)
 
     // Binning
-    if (use_binning)
-    {
+    if (use_binning) {
         settings.cameraSetting.binningMode.write(cbmBinningHV);
         ROS_INFO("2X Binning");
-    }
-    else
-    {
+    } else {
         ROS_INFO("No Binning");
     }
 
     // Gain
     settings.cameraSetting.autoGainControl.write(agcOff);
-    if (gain >= 0.0)
-    {
+    if (gain >= 0.0) {
         settings.cameraSetting.gain_dB.write(gain);
         ROS_INFO("Gain:  %f", gain);
-    }
-    else
-    {
+    } else {
         settings.cameraSetting.autoGainControl.write(agcOn);
         ROS_INFO("Auto Gain");
     }
 
-    // Auto exposure, modified controller for better results, be careful about the minimum exposure time
-    if (use_auto_exposure)
-    {
+    // Auto exposure, modified controller for better results, be careful about the minimum exposure
+    // time
+    if (use_auto_exposure) {
         settings.cameraSetting.autoControlParameters.controllerSpeed.write(acsUserDefined);
         settings.cameraSetting.autoControlParameters.controllerGain.write(0.5);
         settings.cameraSetting.autoControlParameters.controllerIntegralTime_ms.write(100);
@@ -163,72 +139,72 @@ bool Camera::initSingleMVDevice(unsigned int id)
         settings.cameraSetting.autoControlParameters.desiredAverageGreyValue.write(100);
         settings.cameraSetting.autoControlParameters.controllerDelay_Images.write(0);
         settings.cameraSetting.autoControlParameters.exposeLowerLimit_us.write(50);
-        settings.cameraSetting.autoControlParameters.exposeUpperLimit_us.write(exposure_time_us[ids[id]]);
+        settings.cameraSetting.autoControlParameters.exposeUpperLimit_us.write(
+            exposure_time_us[ids[id]]);
         settings.cameraSetting.autoExposeControl.write(aecOn);
-        ROS_INFO("Auto Exposure w/ Max Exposure Time (us) :  %d", settings.cameraSetting.autoControlParameters.exposeUpperLimit_us.read());
-    }
-    else
-    {
+        ROS_INFO("Auto Exposure w/ Max Exposure Time (us) :  %d",
+                 settings.cameraSetting.autoControlParameters.exposeUpperLimit_us.read());
+    } else {
         settings.cameraSetting.expose_us.write(exposure_time_us[ids[id]]);
         ROS_INFO("Exposure Time (us) :  %d", settings.cameraSetting.expose_us.read());
     }
 
     // HDR
-    if (has_hdr)
-    {
-        if (use_hdr)
-        {
+    if (has_hdr) {
+        if (use_hdr) {
             settings.cameraSetting.getHDRControl().HDRMode.write(cHDRmFixed0);
             settings.cameraSetting.getHDRControl().HDREnable.write(bTrue);
             ROS_INFO("Enable HDR ...");
             ROS_INFO("KneePoint 0:");
-            ROS_INFO("  Voltage (mV):      %d", settings.cameraSetting.getHDRControl().getHDRKneePoint(0).HDRControlVoltage_mV.read());
-            ROS_INFO("  Parts per Million: %d", settings.cameraSetting.getHDRControl().getHDRKneePoint(0).HDRExposure_ppm.read());
+            ROS_INFO("  Voltage (mV):      %d",
+                     settings.cameraSetting.getHDRControl()
+                         .getHDRKneePoint(0)
+                         .HDRControlVoltage_mV.read());
+            ROS_INFO(
+                "  Parts per Million: %d",
+                settings.cameraSetting.getHDRControl().getHDRKneePoint(0).HDRExposure_ppm.read());
             ROS_INFO("KneePoint 1:");
-            ROS_INFO("  Voltage (mV):      %d", settings.cameraSetting.getHDRControl().getHDRKneePoint(1).HDRControlVoltage_mV.read());
-            ROS_INFO("  Parts per Million: %d", settings.cameraSetting.getHDRControl().getHDRKneePoint(1).HDRExposure_ppm.read());
-        }
-        else
-        {
+            ROS_INFO("  Voltage (mV):      %d",
+                     settings.cameraSetting.getHDRControl()
+                         .getHDRKneePoint(1)
+                         .HDRControlVoltage_mV.read());
+            ROS_INFO(
+                "  Parts per Million: %d",
+                settings.cameraSetting.getHDRControl().getHDRKneePoint(1).HDRExposure_ppm.read());
+        } else {
             settings.cameraSetting.getHDRControl().HDREnable.write(bFalse);
             ROS_INFO("HDR Off");
         }
-    }
-    else
-    {
+    } else {
         ROS_INFO("No HDR");
     }
 
     // Color
-    if (use_color)
-    {
+    if (use_color) {
         // RGB image
         settings.imageDestination.pixelFormat.write(idpfBGR888Packed);
         ROS_INFO("Color Images");
-    }
-    else
-    {
+    } else {
         // Raw image
         settings.imageDestination.pixelFormat.write(idpfRaw);
         ROS_INFO("Grayscale/Bayer Images");
     }
 
-    // prefill the capture queue. There can be more then 1 queue for some device, but only one for now
+    // prefill the capture queue. There can be more then 1 queue for some device, but only one for
+    // now
     mvIMPACT::acquire::SystemSettings ss(devMgr[id]);
     ss.requestCount.write(1);
 
     // Only for stereo, skip if only one camera exists
-    if (cam_cnt >= 2)
-    {
-        if (ids_inv[id] == 0) // Master camera
+    if (cam_cnt >= 2) {
+        if (ids_inv[id] == 0)  // Master camera
         {
             ROS_INFO("Set Master Camera\n");
             settings.cameraSetting.triggerMode.write(ctmOnDemand);
             settings.cameraSetting.flashMode.write(cfmDigout0);
             settings.cameraSetting.flashType.write(cftStandard);
             settings.cameraSetting.flashToExposeDelay_us.write(0);
-        }
-        else // Slave camera
+        } else  // Slave camera
         {
             ROS_INFO("Set Slave Camera\n");
             settings.cameraSetting.triggerMode.write(ctmOnHighLevel);
@@ -240,26 +216,22 @@ bool Camera::initSingleMVDevice(unsigned int id)
     return true;
 }
 
-void Camera::feedImages()
-{
+void Camera::feedImages() {
     dynamic_reconfigure::Server<bluefox2::on_offConfig> server;
     dynamic_reconfigure::Server<bluefox2::on_offConfig>::CallbackType f;
     f = boost::bind(&bluefox2::Camera::callback, this, _1, _2);
-    //f = boost::bind(&subcallback, _1, _2);
+    // f = boost::bind(&subcallback, _1, _2);
     server.setCallback(f);
 
     ros::Rate r(fps);
     sensor_msgs::ImagePtr image(new sensor_msgs::Image);
     sensor_msgs::ImagePtr left(new sensor_msgs::Image);
     sensor_msgs::ImagePtr right(new sensor_msgs::Image);
-    while (pnode.ok())
-    {
-        if (grab_image_data())
-        {
-            for (int i = 0; i < pub_cnt; i++)
-            {
+    while (pnode.ok()) {
+        if (grab_image_data()) {
+            for (int i = 0; i < pub_cnt; i++) {
                 img_buf[i].header.stamp = capture_time;
-                img_buf[i].header.frame_id = std::string("image");
+                // img_buf[i].header.frame_id = std::string("image");
                 pub_img[i].publish(img_buf[i]);
             }
         }
@@ -268,44 +240,46 @@ void Camera::feedImages()
     }
 }
 
-bool Camera::grab_image_data()
-{
+bool Camera::grab_image_data() {
     // Request images from both cameras
-    for (int i = 0; i < cam_cnt; i++)
-        fi[ids[i]]->imageRequestSingle();
-    usleep(10000); // necessary short sleep to warm up the camera
+    for (int i = 0; i < cam_cnt; i++) fi[ids[i]]->imageRequestSingle();
+    usleep(10000);  // necessary short sleep to warm up the camera
     capture_time = ros::Time::now();
 
-    int requestNr[10] = {INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID};
-    for (int i = 0; i < cam_cnt; i++)
-        requestNr[ids[i]] = fi[ids[i]]->imageRequestWaitFor(300);
+    int requestNr[10] = {INVALID_ID,
+                         INVALID_ID,
+                         INVALID_ID,
+                         INVALID_ID,
+                         INVALID_ID,
+                         INVALID_ID,
+                         INVALID_ID,
+                         INVALID_ID,
+                         INVALID_ID,
+                         INVALID_ID};
+    for (int i = 0; i < cam_cnt; i++) requestNr[ids[i]] = fi[ids[i]]->imageRequestWaitFor(300);
 
     bool status = true;
     for (int i = 0; i < cam_cnt; i++)
-        if (!(fi[ids[i]]->isRequestNrValid(requestNr[ids[i]])))
-            status = false;
+        if (!(fi[ids[i]]->isRequestNrValid(requestNr[ids[i]]))) status = false;
 
-    if (status)
-    {
+    if (status) {
         int ok_cnt = 0;
-        for (int i = 0; i < cam_cnt; i++)
-        {
+        for (int i = 0; i < cam_cnt; i++) {
             pRequest[ids[i]] = fi[ids[i]]->getRequest(requestNr[ids[i]]);
             ok_cnt += pRequest[ids[i]]->isOK();
         }
 
-        if (ok_cnt == cam_cnt)
-        {
+        if (ok_cnt == cam_cnt) {
             // Shared properties
             unsigned int Channels = pRequest[ids[0]]->imageChannelCount.read();
             unsigned int Height = pRequest[ids[0]]->imageHeight.read();
             unsigned int Width = pRequest[ids[0]]->imageWidth.read();
             unsigned int Step = Width * Channels;
             unsigned int Data_cnt = Height * Step;
-            std::string Encoding = Channels == 1 ? sensor_msgs::image_encodings::MONO8 : sensor_msgs::image_encodings::BGR8;
+            std::string Encoding = Channels == 1 ? sensor_msgs::image_encodings::MONO8
+                                                 : sensor_msgs::image_encodings::BGR8;
 
-            for (int i = 0; i < pub_cnt; i++)
-            {
+            for (int i = 0; i < pub_cnt; i++) {
                 int sub_img_cnt = masks[i].length();
 
                 // Set image properties
@@ -314,40 +288,38 @@ bool Camera::grab_image_data()
                 img_buf[i].step = Step;
                 img_buf[i].encoding = Encoding;
 
+                // Save exposure time info
+                img_buf[i].header.frame_id = boost::str(
+                    boost::format("expose_us:%d") % pRequest[ids[0]]->infoExposeTime_us.read());
+
                 // Resize image
                 img_buf[i].data.resize(img_buf[i].step * img_buf[i].height);
 
                 // Copy data
-                for (unsigned int j = 0; j < sub_img_cnt; j++)
-                {
+                for (unsigned int j = 0; j < sub_img_cnt; j++) {
                     int k = masks[i][j] - 'a';
                     if (on_off[k])
                         memset(&img_buf[i].data[Data_cnt * j], 0, Data_cnt);
                     else
-                        memcpy(&img_buf[i].data[Data_cnt * j], pRequest[ids[k]]->imageData.read(), Data_cnt);
+                        memcpy(&img_buf[i].data[Data_cnt * j],
+                               pRequest[ids[k]]->imageData.read(),
+                               Data_cnt);
                 }
             }
             // Release capture request
-            for (int i = 0; i < cam_cnt; i++)
-                fi[ids[i]]->imageRequestUnlock(requestNr[ids[i]]);
+            for (int i = 0; i < cam_cnt; i++) fi[ids[i]]->imageRequestUnlock(requestNr[ids[i]]);
             status = true;
-        }
-        else
-        {
+        } else {
             ROS_ERROR("Invalid Image");
             // Clear all image received and reset capture
-            for (int i = 0; i < cam_cnt; i++)
-                fi[ids[i]]->imageRequestUnlock(requestNr[ids[i]]);
+            for (int i = 0; i < cam_cnt; i++) fi[ids[i]]->imageRequestUnlock(requestNr[ids[i]]);
             status = false;
         }
-    }
-    else
-    {
+    } else {
         ROS_ERROR("Invalid Image Request");
         // Clear all image received and reset capture
         for (int i = 0; i < cam_cnt; i++)
-            if (fi[ids[i]]->isRequestNrValid(requestNr[ids[i]]))
-            {
+            if (fi[ids[i]]->isRequestNrValid(requestNr[ids[i]])) {
                 pRequest[ids[i]] = fi[ids[i]]->getRequest(requestNr[ids[i]]);
                 fi[ids[i]]->imageRequestUnlock(requestNr[ids[i]]);
             }
