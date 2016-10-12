@@ -6,4 +6,4 @@
 	url = git@github.com:groundmelon/laser_splitter.git
 [submodule "terarangerone-ros"]
 	path = terarangerone-ros
-	url = ./terarangerone-ros
+	url = git@github.com:groundmelon/terarangerone-ros.git
